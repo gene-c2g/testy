@@ -163,11 +163,25 @@ def parseTestDocument(doc, delegate,adddelegate):
         else :
             print (element)
 
+def replaceReference(text):
+
+    if len(text) == 0:
+        return
+
+    result = re.sub(r'\[(\d*)\]', r'\\RefRef{\1}', text)
+    if result:
+        return result
+    else:
+        return
+
 def processTestParagraph(paragraph,ht,nonheadingdelegate,adddelegate):
     text = getAcceptedText(paragraph)
     print("Style:", paragraph.style.name, "Text: ", text)
     text = text.replace("%", "\%")
     text = text.replace("&", "\&")
+    if len(text) > 0:
+        text = replaceReference(text)
+
 
     adddelegate(paragraph.style.name, text)
     
@@ -325,6 +339,9 @@ def convertTestTable(table,ht):#,adddelegate):
                 cellText = cell.text
                 cellText = cellText.replace("%", "\%")
                 cellText = cellText.replace("&", "\&")
+                if len(cellText) > 0:
+                    cellText = replaceReference(cellText)
+
                 if(cell.width == None):
                     cellWidth = 16.0 / numColumns #since the table row doesn't include column widths, just use 16 cm (approx 6.25") / num columns
                     tableRow.append([cellText, cellWidth]) 
@@ -352,6 +369,8 @@ def convertTestTable(table,ht):#,adddelegate):
                 cellText = cell.text
                 cellText = cellText.replace("%", "\%")
                 cellText = cellText.replace("&", "\&")
+                if len(cellText) > 0:
+                    cellText = replaceReference(cellText)
                 tableRow.append(cellText)
             rows.append(tableRow)
             print(tableRow)
@@ -453,7 +472,8 @@ def referenceStyle(processingState, styleType):
     print("Reference")
     if processingState["firstReference"]:
         processingState["firstReference"] = False
-    return ("\\DefineReference{}{%s}")
+    processingState["referenceCount"] += 1
+    return ("\\DefineReference{"+str(processingState["referenceCount"])+"}{%s}")
 
 def bodyStyle(processingState, styleType):
     print("body")
@@ -503,7 +523,7 @@ def clearProcessingState(processingState, outText):
 
 def outputTeX(filename, testText):
     styleDelegateList = [["test case", testCaseStyle], ["list", listStyle], ["heading", headingStyle], ["normal", normalStyle], ["body",bodyStyle], ["caption", captionStyle], ["reference", referenceStyle], ["disclaimer", disclaimerStyle], ["table", tableStyle], ["lastHeadingNumber", 0]]
-    processingState = {"firstList": True, "firstReference": True, "inTest": False, "inTestSteps": False, "lastSectionWasHeading": False}
+    processingState = {"firstList": True, "firstReference": True, "inTest": False, "inTestSteps": False, "lastSectionWasHeading": False, "referenceCount": 0}
     print("firstList:", processingState["firstList"])
     print("firstReference:", processingState["firstReference"])
 
