@@ -166,6 +166,9 @@ def parseTestDocument(doc, delegate,adddelegate):
 def processTestParagraph(paragraph,ht,nonheadingdelegate,adddelegate):
     text = getAcceptedText(paragraph)
     print("Style:", paragraph.style.name, "Text: ", text)
+    text = text.replace("%", "\%")
+    text = text.replace("&", "\&")
+
     adddelegate(paragraph.style.name, text)
     
     return
@@ -239,37 +242,34 @@ def processTestTable(rows, adddelegate):
         rowOut = ""
         isHeaderRow = row[0] == 1
         for col in itertools.islice(row, 1, None):
-            if row[0] == 1:
-                if isHeaderRow:
-                    if processingFirstRow:
-                        firstRowHeader = firstRowHeader[:len(firstRowHeader) - 1] #removing the "}" at the end. In order to not have to add an ending }
-                                                                                  #after we're done processing, we add it every time and when we add a new 
-                                                                                  #column width, we need to remove the last "}"
-                        val = col[1]
-                        firstRowHeader += " L{" + str(val) + " cm}|}"   #adding a } at the end so taht we don't have to proactively add it when we're done
-                                                                        #processing the end of the first row.
-                    if len(rowOut) == 0:
-                        rowOut += headerRowStart
-                        headerRowStart = embeddedRowStart
-                    isHeaderRow = True
-                    if(processingFirstRow):
-                        rowOut += indentSpaces(1) + "\\HeaderCell{" + col[0] + "} & \n"
-                    else:
-                        rowOut += indentSpaces(1) + "\\HeaderCell{" + col + "} & \n"
+            if processingFirstRow:
+                firstRowHeader = firstRowHeader[:len(firstRowHeader) - 1] #removing the "}" at the end. In order to not have to add an ending }
+                                                                            #after we're done processing, we add it every time and when we add a new 
+                                                                            #column width, we need to remove the last "}"
+                val = col[1]
+                firstRowHeader += " L{" + str(val) + " cm}|}"   #adding a } at the end so taht we don't have to proactively add it when we're done
+                                                                #processing the end of the first row.
+            if isHeaderRow:
+                if len(rowOut) == 0:
+                    rowOut += headerRowStart
+                    headerRowStart = embeddedRowStart
+                if(processingFirstRow):
+                    rowOut += indentSpaces(1) + "\\HeaderCell{" + col[0] + "} & \n"
                 else:
-                    isHeaderRow = False
-                    if len(rowOut) == 0:
-                        rowOut += nonHeaderRowStart
-                        rowOut += indentSpaces(1) + "\\TableCell{"+col[1]+"}"
-                    else:
-                        rowOut += " &\n" + indentSpaces(1) + "\\TableCell{"+col[1]+"}"
-                continue
+                    rowOut += indentSpaces(1) + "\\HeaderCell{" + col + "} & \n"
             else:
                 if len(rowOut) == 0:
                     rowOut += nonHeaderRowStart
-                    rowOut += indentSpaces(1) + "\\TableCell{"+col+"}"
+                    if processingFirstRow:
+                        rowOut += indentSpaces(1) + "\\TableCell{"+col[0]+"}"
+                    else:
+                        rowOut += indentSpaces(1) + "\\TableCell{"+col+"}"
+
                 else:
-                    rowOut += " &\n"+ indentSpaces(1) + "\\TableCell{"+col+"}"
+                    if processingFirstRow:
+                        rowOut += " &\n" + indentSpaces(1) + "\\TableCell{"+col[0]+"}"
+                    else:
+                        rowOut += " &\n"+ indentSpaces(1) + "\\TableCell{"+col+"}"
         if isHeaderRow:
             #for the header row, we want to do the opposite of what we did with firstRowHeader.  Here we want to remove the "&" at the end of the row
             #only for the last one.  This might not be the best way but it works for now.
@@ -322,11 +322,14 @@ def convertTestTable(table,ht):#,adddelegate):
                 print("width type:", type(type(cell.width)))
                 print("twips type:", type(Twips))
                 #print("width in cm", cell.width.cm)
+                cellText = cell.text
+                cellText = cellText.replace("%", "\%")
+                cellText = cellText.replace("&", "\&")
                 if(cell.width == None):
                     cellWidth = 16.0 / numColumns #since the table row doesn't include column widths, just use 16 cm (approx 6.25") / num columns
-                    tableRow.append([cell.text, cellWidth]) 
+                    tableRow.append([cellText, cellWidth]) 
                 else:
-                    tableRow.append([cell.text, emToCM(cell.width)])
+                    tableRow.append([cellText, emToCM(cell.width)])
             bFirstRow = False
             print(tableRow)
             rows.append(tableRow)
@@ -346,7 +349,10 @@ def convertTestTable(table,ht):#,adddelegate):
                     else:
                         tableRow.append(0)
                     processedShadedForRow = True
-                tableRow.append(cell.text)
+                cellText = cell.text
+                cellText = cellText.replace("%", "\%")
+                cellText = cellText.replace("&", "\&")
+                tableRow.append(cellText)
             rows.append(tableRow)
             print(tableRow)
             print(rows)
@@ -524,7 +530,6 @@ def outputTeX(filename, testText):
         #print(convertWordStyleToLaTeXStyle(styleType, styleDelegateList) % styleType)
         outText = convertWordStyleToLaTeXStyle(processingState, styleType, styleDelegateList)
         if outText.find("%s") != -1:
-            text = text.replace("%", "\%")
             print(outText % text)
             fp.write(outText % text + "\n")
         else:
