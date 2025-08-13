@@ -205,6 +205,7 @@ def mergeText(text, newtext):
 
 def isShaded(cell):
     retVal = False
+    print(cell._tc.xml)
     pattern = re.compile('w:fill=\"(\S*)\"')
     match = pattern.search(cell._tc.xml)
     if match:
@@ -452,11 +453,11 @@ def bodyStyle(processingState, styleType):
     print("body")
     outText = ""
     outText = clearProcessingState(processingState, outText)
-    outText += "%s"
+    outText += "%s\n"
     return (outText)
 
 def captionStyle(processingState, styleType):
-    print("body")
+    print("caption")
     outText = ""
     outText = clearProcessingState(processingState, outText)
     outText += "caption style(%s)"
@@ -513,7 +514,7 @@ def outputTeX(filename, testText):
     fp.write("\\SetBluetoothDocumentType{Test Suite}\n")
     fp.write("\\SetRevision{d09r01}\n")
     fp.write("\\SetGroup {Electronic Shelf Label Working Group}\n")
-    fp.write("\\SetFeedback {esl-main@bluetooth.org}%\href{mailto:esl-main@bluetooth.org}{esl-main@bluetooth.org}}\n")
+    fp.write("\\SetFeedback {esl-main@bluetooth.org}\n")
     fp.write("\\BluetoothDraftSpec\n")
     fp.write("\\SetAbstract {This service allows electronic shelf labels (ESLs) to be controlled and updated using Bluetooth wireless technology.}\n")
     fp.write("\\begin{document}\n")
@@ -523,6 +524,7 @@ def outputTeX(filename, testText):
         #print(convertWordStyleToLaTeXStyle(styleType, styleDelegateList) % styleType)
         outText = convertWordStyleToLaTeXStyle(processingState, styleType, styleDelegateList)
         if outText.find("%s") != -1:
+            text = text.replace("%", "\%")
             print(outText % text)
             fp.write(outText % text + "\n")
         else:
