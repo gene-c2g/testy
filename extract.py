@@ -299,7 +299,7 @@ def processTestTable(rows, adddelegate):
             processingFirstRow = False
         processingFirstRow = False
         outText += rowOut
-    outText += "\\TableCaption{caption}{tab:}\n\\EndTable"
+    #outText += "\\TableCaption{caption}{tab:}\n\\EndTable"
     adddelegate("Table", outText)
     print(outText)
     return
@@ -485,12 +485,15 @@ def bodyStyle(processingState, styleType):
 def captionStyle(processingState, styleType):
     print("caption")
     outText = ""
-    outText = clearProcessingState(processingState, outText)
+    #outText = clearProcessingState(processingState, outText)
     if processingState["inFigure"]:
         outText += "\\end{center}\n"
         outText += "\n\\Caption{%s}{fig:}\n"
         outText += "\\end{figure}\n"
         processingState["inFigure"] = False
+    elif processingState["inTable"]:
+        outText += "\\TableCaption{%s}{tab:}\n\\EndTable"
+        processingState["inTable"] = False
     return (outText)
 
 def disclaimerStyle(processingState, styleType):
@@ -502,6 +505,7 @@ def disclaimerStyle(processingState, styleType):
 
 def tableStyle(processingState, styleType):
     print("table")
+    processingState["inTable"] = True
     return ("%s")
 
 def figureStyle(processingState, styleType):
@@ -525,6 +529,12 @@ def clearProcessingState(processingState, outText):
         print("add end itemize")
         outText += "\\end{itemize}\n"
         print(outText)
+    if processingState["inTable"]:
+        outText += "\\EndTable\n"
+        processingState["inTable"] = False
+    if processingState["inFigure"]:
+        outText += "\\end{figure}\n"
+        processingState["inFigure"] = False
     processingState["firstList"] = True
     processingState["firstReference"] = True
     processingState["lastSectionWasHeading"] = False
@@ -532,7 +542,7 @@ def clearProcessingState(processingState, outText):
 
 def outputTeX(filename, testText):
     styleDelegateList = [["test case", testCaseStyle], ["list", listStyle], ["heading", headingStyle], ["normal", normalStyle], ["body",bodyStyle], ["caption", captionStyle], ["reference", referenceStyle], ["disclaimer", disclaimerStyle], ["table", tableStyle], ["lastHeadingNumber", 0], ["figure", figureStyle]]
-    processingState = {"firstList": True, "firstReference": True, "inTest": False, "inTestSteps": False, "lastSectionWasHeading": False, "referenceCount": 0, "inFigure": False}
+    processingState = {"firstList": True, "firstReference": True, "inTest": False, "inTestSteps": False, "lastSectionWasHeading": False, "referenceCount": 0, "inFigure": False, "inTable": False}
     print("firstList:", processingState["firstList"])
     print("firstReference:", processingState["firstReference"])
 
